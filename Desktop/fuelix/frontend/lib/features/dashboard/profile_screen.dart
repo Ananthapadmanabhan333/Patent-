@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
+import '../../services/user_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -18,8 +19,36 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String _activityLevel = 'Moderate';
   
   double _calories = 2500; // Default
-  
-  void _calculateMacros() {
+  final UserService _userService = UserService();
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  void _loadProfile() async {
+    try {
+      final profile = await _userService.getUserProfile();
+      if (mounted) {
+        setState(() {
+          _heightController.text = (profile['height_cm'] ?? 175).toString();
+          _weightController.text = (profile['current_weight_kg'] ?? 70).toString();
+          _activityLevel = profile['activity_level'] ?? 'Moderate';
+          // _ageController.text = ... (calculate from DOB if needed, or store age directly)
+          // For now using default or derived
+          
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      print("Failed to load profile: $e");
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _calculateMacros() async {
     double weight = double.tryParse(_weightController.text) ?? 70;
     double height = double.tryParse(_heightController.text) ?? 175;
     int age = int.tryParse(_ageController.text) ?? 25;
@@ -28,8 +57,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     double bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
     
     double multiplier = 1.2;
-    if (_activityLevel == 'active') multiplier = 1.55;
-    if (_activityLevel == 'athlete') multiplier = 1.9;
+    if (_activityLevel == 'Moderate') multiplier = 1.375;
+    if (_activityLevel == 'Active') multiplier = 1.55;
+    if (_activityLevel == 'Athlete') multiplier = 1.9;
     
     double tdee = bmr * multiplier;
     
@@ -39,6 +69,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     setState(() {
       _calories = tdee;
     });
+    
+    // Save to Backend
+    try {
+      await _userService.updateUserProfile({
+        "height_cm": height,
+        "current_weight_kg": weight,
+        "activity_level": _activityLevel,
+      });
+      
+      // Log weight progress
+      await _userService.logProgress("weight", weight);
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile updated and targets calculated!")),
+        );
+      }
+    } catch (e) {
+       if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Saved locally, but sync failed: $e")),
+        );
+      }
+    }
   }
 
   @override

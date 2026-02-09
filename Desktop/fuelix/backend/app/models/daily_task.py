@@ -30,4 +30,4 @@ class DailyTask(Base):
     due_date = Column(DateTime) # Usually just the date, or specific time
     created_at = Column(DateTime, default=datetime.utcnow)
     
-    owner = relationship("User", backref="tasks")
+    owner = relationship("User", back_populates="tasks")

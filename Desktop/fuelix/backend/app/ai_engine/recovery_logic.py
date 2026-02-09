@@ -37,8 +37,11 @@ class RecoveryLogic:
         state = db.query(AthleteState).filter(AthleteState.user_id == user.id).first()
         if state:
             avg_fatigue = (state.cns_fatigue + state.muscular_fatigue_lower + state.muscular_fatigue_upper) / 3
-            if avg_fatigue > 5: # Assuming 0-10 scale
-                fatigue_penalty = (avg_fatigue - 5) * 5
+            # Fatigue is 0-100. Readiness should be negatively impacted by fatigue.
+            # Simple model: Fatigue directly subtracts from readiness, but scaled.
+            # e.g. 100 fatigue -> -80 readiness (leaving 20 if no other penalties)
+            fatigue_penalty = avg_fatigue * 0.8
+            if fatigue_penalty > 0:
                 score -= fatigue_penalty
                 details.append(f"Systemic Fatigue: -{fatigue_penalty:.1f}")
 

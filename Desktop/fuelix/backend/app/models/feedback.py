@@ -12,4 +12,4 @@ class WorkoutFeedback(Base):
     # Detailed soreness map e.g. {"shoulders": 5, "quads": 2}
     soreness_map = Column(JSON, default={})
     
-    training_session = relationship("TrainingSession", backref="feedback")
+    training_session = relationship("TrainingSession", back_populates="feedback")

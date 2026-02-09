@@ -4,6 +4,8 @@ from app.models.user import User
 from app.models.athlete_state import AthleteState
 from app.models.daily_log import DailyLog
 from app.models.training import TrainingSession
+from app.models.chat_message import ChatMessage
+from app.models.progress import ProgressHistory, MetricType
 from datetime import date
 
 class ContextManager:
@@ -65,12 +67,40 @@ class ContextManager:
                 if today_log:
                     context_parts.append(
                         f"\nToday's Status:\n"
-                        f"- Sleep: {today_log.sleep_hours} hrs\n"
-                        f"- Mood: {today_log.mood}/10\n"
                         f"- Soreness: {today_log.soreness_level}/10"
                     )
             except:
                 pass  # Skip if table doesn't exist
+
+            # Progress History - optional
+            try:
+                weight_history = db.query(ProgressHistory).filter(
+                    ProgressHistory.user_id == user.id,
+                    ProgressHistory.metric_type == MetricType.WEIGHT
+                ).order_by(ProgressHistory.date.desc()).limit(3).all()
+                
+                if weight_history:
+                    progress_str = "\nWeight Trends:\n"
+                    for p in weight_history:
+                        progress_str += f"- {p.value}kg on {p.date}\n"
+                    context_parts.append(progress_str)
+            except:
+                pass
+
+            # Chat History - optional (Last 5 messages)
+            try:
+                recent_chat = db.query(ChatMessage).filter(
+                    ChatMessage.user_id == user.id
+                ).order_by(ChatMessage.timestamp.desc()).limit(5).all()
+                
+                if recent_chat:
+                    chat_str = "\nRecent Conversation:\n"
+                    # Reverse to show chronological order
+                    for msg in reversed(recent_chat):
+                        chat_str += f"User: {msg.user_message}\nCoach: {msg.ai_response}\n"
+                    context_parts.append(chat_str)
+            except:
+                pass
             
             return "\n".join(context_parts)
             

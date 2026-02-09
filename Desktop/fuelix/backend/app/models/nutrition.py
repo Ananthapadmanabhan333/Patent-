@@ -23,7 +23,7 @@ class NutritionLog(Base):
     meal_type = Column(SQLEnum(MealType), nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
     
-    user = relationship("User", backref="nutrition_logs")
+    user = relationship("User", back_populates="nutrition_logs")
 
 class WaterLog(Base):
     id = Column(Integer, primary_key=True, index=True)
@@ -32,4 +32,4 @@ class WaterLog(Base):
     amount_ml = Column(Float, nullable=False)
     timestamp = Column(DateTime, default=datetime.utcnow)
     
-    user = relationship("User", backref="water_logs")
+    user = relationship("User", back_populates="water_logs")

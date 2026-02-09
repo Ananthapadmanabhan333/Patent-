@@ -28,4 +28,5 @@ class TrainingSession(Base):
     
     notes = Column(String, nullable=True)
     
-    user = relationship("User", backref="training_sessions")
+    user = relationship("User", back_populates="training_sessions")
+    feedback = relationship("WorkoutFeedback", back_populates="training_session")

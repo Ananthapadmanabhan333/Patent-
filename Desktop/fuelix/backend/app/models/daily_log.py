@@ -20,4 +20,4 @@ class DailyLog(Base):
     soreness_level = Column(Integer, nullable=True) # 1-10
     notes = Column(Text, nullable=True)
     
-    user = relationship("User", backref="daily_logs")
+    user = relationship("User", back_populates="daily_logs")

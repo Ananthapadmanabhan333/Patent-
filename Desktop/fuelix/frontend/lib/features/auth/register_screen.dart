@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../core/app_theme.dart';
+import '../../services/auth_service.dart';
 import '../dashboard/dashboard_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -17,16 +18,38 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   void _register() async {
     setState(() => _isLoading = true);
-    // Simulate network delay for MVP
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _isLoading = false);
     
-    // Navigate to Dashboard
-    if (mounted) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const DashboardScreen()),
-      );
+    try {
+      final email = _emailController.text.trim();
+      final password = _passwordController.text.trim();
+      final name = _nameController.text.trim();
+
+      // 1. Register
+      await AuthService().register(name, email, password);
+      
+      // 2. Auto Login
+      await AuthService().login(email, password);
+      
+      // 3. Navigate
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll("Exception: ", "")),
+            backgroundColor: AppTheme.accentColor,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

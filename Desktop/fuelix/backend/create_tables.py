@@ -10,6 +10,8 @@ from app.models.daily_log import DailyLog
 from app.models.feedback import WorkoutFeedback
 from app.models.injury import Injury
 from app.models.training import TrainingSession
+from app.models.progress import ProgressHistory
+from app.models.chat_message import ChatMessage
 
 def create_tables():
     """Create all tables in the database."""
@@ -24,6 +26,8 @@ def create_tables():
     print("  - injuries")
     print("  - training_session")
     print("  - workout_feedback")
+    print("  - progress_history")
+    print("  - chat_messages")
 
 if __name__ == "__main__":
     create_tables()

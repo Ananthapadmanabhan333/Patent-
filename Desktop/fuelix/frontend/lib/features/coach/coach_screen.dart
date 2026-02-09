@@ -11,13 +11,32 @@ class CoachScreen extends StatefulWidget {
 
 class _CoachScreenState extends State<CoachScreen> {
   final TextEditingController _controller = TextEditingController();
-  final List<Map<String, dynamic>> _messages = [
-    {"text": "Hello! I am your AI Performance Coach. How are you feeling today?", "isMe": false},
-  ];
+  final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
   final ScrollController _scrollController = ScrollController();
 
   final CoachService _coachService = CoachService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHistory();
+  }
+
+  void _loadHistory() async {
+    final history = await _coachService.fetchChatHistory();
+    if (mounted) {
+      setState(() {
+        _messages.clear();
+        _messages.addAll(history);
+        if (_messages.isEmpty) {
+           _messages.add({"text": "Hello! I am your AI Performance Coach. How are you feeling today?", "isMe": false});
+        }
+      });
+      // Scroll to bottom after slight delay for rendering
+      Future.delayed(const Duration(milliseconds: 100), _scrollToBottom);
+    }
+  }
 
   void _sendMessage() async {
     if (_controller.text.isEmpty) return;

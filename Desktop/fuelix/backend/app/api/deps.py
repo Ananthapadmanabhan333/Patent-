@@ -17,27 +17,18 @@ reusable_oauth2 = OAuth2PasswordBearer(
 def get_db() -> Generator:
     """
     Database session dependency.
-    Handles connection errors gracefully for demo purposes.
     """
+    db = SessionLocal()
     try:
-        db = SessionLocal()
         yield db
-    except Exception as e:
-        print(f"Database connection failed: {e}")
-        # Yield None if database is unavailable
-        yield None
     finally:
-        try:
-            if db:
-                db.close()
-        except:
-            pass
+        db.close()
 
 def get_current_user(
     db: Session = Depends(get_db), token: str = Depends(reusable_oauth2)
 ) -> User:
-    if token == "mock_token_for_dev":
-        return get_mock_user(db)
+    # Mock token removed for production/strict auth
+    # if token == "mock_token_for_dev": ... logic deleted
         
     try:
         payload = jwt.decode(
@@ -61,20 +52,21 @@ def get_current_active_user(
         raise HTTPException(status_code=400, detail="Inactive user")
     return current_user
 
-def get_mock_user(db: Session = Depends(get_db)) -> User:
+def get_mock_user(db: Session = None) -> User:
     """
-    For MVP: Returns a mock user to bypass authentication.
-    In production, remove this and use proper authentication.
+    For MVP: Returns a mock user object.
+    Now used to instantiate the user for DB storage.
     """
-    # Create a mock user object without database access
+    # Create a mock user object 
+    # Note: ID is not set here so DB can auto-increment/assign
+    # Using a proper bcrypt hash for password "test123"
     mock_user = User(
-        id=1,
         email="test@fuelix.com",
         full_name="Test User",
-        hashed_password="mock_hash",
+        hashed_password="$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewY5GyYqgdW6Kzm2",  # bcrypt hash of "test123"
         is_active=True,
         current_weight_kg=75.0,
-        activity_level="moderate",
+        activity_level="Active", # Match Enum value
         equipment_access=["bodyweight", "dumbbells"]
     )
     return mock_user

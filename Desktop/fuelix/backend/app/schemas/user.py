@@ -18,6 +18,9 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     email: EmailStr
     password: str
+    full_name: str = "User"
+    is_active: bool = True
+    is_superuser: bool = False
 
 # Properties to receive via API on update
 class UserUpdate(UserBase):
