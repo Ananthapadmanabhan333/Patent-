@@ -105,5 +105,5 @@ Distributed under the MIT License. See `LICENSE` for more information.
 ---
 
 <p align="center">
-  Built with ❤️ for the IP Community
+  Built by Ananthapadmanabhan 
 </p>
