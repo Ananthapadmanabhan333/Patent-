@@ -1,0 +1,108 @@
+# Enterprise local development environment
+version: '3.8'
+
+services:
+  # ==========================================
+  # API Gateway
+  # ==========================================
+  traefik:
+    image: traefik:v2.10
+    container_name: patentiq-gateway
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+    ports:
+      - "80:80" # HTTP
+      - "443:443" # HTTPS
+      - "8080:8080" # Traefik Dashboard (dev only)
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    networks:
+      - patentiq_network
+
+  # ==========================================
+  # Core Databases
+  # ==========================================
+  postgres:
+    image: postgres:15-alpine
+    container_name: patentiq-postgres
+    environment:
+      POSTGRES_USER: patentiq_admin
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-super_secure_pg_pass}
+      POSTGRES_DB: patentiq_primary
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U patentiq_admin -d patentiq_primary" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - patentiq_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: patentiq-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - patentiq_network
+
+  neo4j:
+    image: neo4j:5.12-community
+    container_name: patentiq-graph
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD:-super_secure_graph_pass}
+      NEO4J_PLUGINS: '["apoc"]'
+    ports:
+      - "7474:7474" # HTTP UI
+      - "7687:7687" # Bolt protocol
+    volumes:
+      - neo4j_data:/data
+    networks:
+      - patentiq_network
+
+  # ==========================================
+  # Observability
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    container_name: patentiq-prometheus
+    volumes:
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      - patentiq_network
+
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: patentiq-grafana
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    ports:
+      - "3000:3000"
+    networks:
+      - patentiq_network
+
+networks:
+  patentiq_network:
+    driver: bridge
+
+volumes:
+  pg_data:
+  redis_data:
+  neo4j_data:
