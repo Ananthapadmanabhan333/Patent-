@@ -1,0 +1,36 @@
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: patentiq-gateway
+  namespace: default
+spec:
+  entryPoints:
+    - web
+  routes:
+    # Auth Service
+    - match: PathPrefix(`/api/auth`)
+      kind: Rule
+      services:
+        - name: patentiq-auth-service
+          port: 8000
+    
+    # Core Search & Data
+    - match: PathPrefix(`/api/search`)
+      kind: Rule
+      services:
+        - name: patentiq-search-service
+          port: 8000
+          
+    # NLP & AI Analysis 
+    - match: PathPrefix(`/api/analysis`)
+      kind: Rule
+      services:
+        - name: patentiq-nlp-service
+          port: 8000
+
+    # Frontend Route (Catch-all)
+    - match: PathPrefix(`/`)
+      kind: Rule
+      services:
+        - name: patentiq-frontend-service
+          port: 80
